@@ -1,7 +1,10 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CategoriaController;
+use App\Http\Controllers\Api\ProdutoController;
+use App\Http\Controllers\Api\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,6 +17,29 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+Route::post('/register', [AuthController::class, 'register'])->name('register');
+Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth:sanctum');
+
+// Rotas Protegidas (requerem autenticação)
+Route::middleware('auth:sanctum')->group(function () {
+    // Rota para obter dados do usuário autenticado (método 'me' no UserController)
+    Route::get('/user/me', [UserController::class, 'me'])->name('user.me');
+
+    // Rota para atualizar dados do usuário
+    Route::put('/user/update', [UserController::class, 'update'])->name('user.update');
+
+    // Rota para excluir a conta do usuário
+    Route::delete('/user/delete', [UserController::class, 'destroy'])->name('user.delete');
 });
+
+// Rotas Protegidas (requerem autenticação)
+Route::middleware('auth:sanctum')->group(function () {
+    // Rotas de CRUD para Categorias
+    Route::apiResource('categorias', CategoriaController::class);
+
+    // Rotas de CRUD para Produtos
+    Route::apiResource('produtos', ProdutoController::class);
+
+    // Rota para obter dados do usuário autenticado
+    Route::get('/user/me', [UserController::class, 'me'])->middleware('auth:sanctum')->name('user.me');});

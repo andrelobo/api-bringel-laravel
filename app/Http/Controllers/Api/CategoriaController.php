@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Categoria;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -23,6 +24,10 @@ class CategoriaController extends Controller
      */
     public function store(Request $request)
     {
+        if (!$request->user()->hasRole(User::ROLE_ADMIN)) {
+            return response()->json(['message' => 'Unauthorized'], Response::HTTP_FORBIDDEN);
+        }
+
         // Validação dos dados de entrada
         $request->validate([
             'nome' => 'required|string|max:100',
@@ -57,6 +62,10 @@ class CategoriaController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        if (!$request->user()->hasRole(User::ROLE_ADMIN)) {
+            return response()->json(['message' => 'Unauthorized'], Response::HTTP_FORBIDDEN);
+        }
+
         // Busca a categoria pelo ID
         $categoria = Categoria::find($id);
 
@@ -67,7 +76,7 @@ class CategoriaController extends Controller
 
         // Validação dos dados de entrada
         $request->validate([
-            'nome' => 'sometimes|string|max:100',
+            'nome' => 'required|string|max:100',
         ]);
 
         // Atualiza a categoria com os dados fornecidos
@@ -80,8 +89,12 @@ class CategoriaController extends Controller
     /**
      * Excluir uma categoria.
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
+        if (!$request->user()->hasRole(User::ROLE_ADMIN)) {
+            return response()->json(['message' => 'Unauthorized'], Response::HTTP_FORBIDDEN);
+        }
+
         // Busca a categoria pelo ID
         $categoria = Categoria::find($id);
 
@@ -97,3 +110,4 @@ class CategoriaController extends Controller
         return response()->json(null, Response::HTTP_NO_CONTENT);
     }
 }
+

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Produto;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
@@ -24,6 +25,10 @@ class ProdutoController extends Controller
      */
     public function store(Request $request)
     {
+        if (!$request->user()->hasRole(User::ROLE_ADMIN)) {
+            return response()->json(['message' => 'Unauthorized'], Response::HTTP_FORBIDDEN);
+        }
+
         // Validação dos dados de entrada
         $request->validate([
             'nome' => 'required|string|max:50',
@@ -69,6 +74,10 @@ class ProdutoController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        if (!$request->user()->hasRole(User::ROLE_ADMIN)) {
+            return response()->json(['message' => 'Unauthorized'], Response::HTTP_FORBIDDEN);
+        }
+
         // Busca o produto pelo ID
         $produto = Produto::find($id);
 
@@ -109,8 +118,12 @@ class ProdutoController extends Controller
     /**
      * Excluir um produto.
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
+        if (!$request->user()->hasRole(User::ROLE_ADMIN)) {
+            return response()->json(['message' => 'Unauthorized'], Response::HTTP_FORBIDDEN);
+        }
+
         // Busca o produto pelo ID
         $produto = Produto::find($id);
 
@@ -131,3 +144,4 @@ class ProdutoController extends Controller
         return response()->json(null, Response::HTTP_NO_CONTENT);
     }
 }
+

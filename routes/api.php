@@ -6,40 +6,30 @@ use App\Http\Controllers\Api\CategoriaController;
 use App\Http\Controllers\Api\ProdutoController;
 use App\Http\Controllers\Api\UserController;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group. Make something great!
-|
-*/
-
+// Rotas públicas de autenticação
 Route::post('/register', [AuthController::class, 'register'])->name('register');
 Route::post('/login', [AuthController::class, 'login'])->name('login');
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth:sanctum');
 
-// Rotas Protegidas (requerem autenticação)
+// Rotas que requerem apenas autenticação
 Route::middleware('auth:sanctum')->group(function () {
-    // Rota para obter dados do usuário autenticado (método 'me' no UserController)
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/user/me', [UserController::class, 'me'])->name('user.me');
-
-    // Rota para atualizar dados do usuário
     Route::put('/user/update', [UserController::class, 'update'])->name('user.update');
-
-    // Rota para excluir a conta do usuário
     Route::delete('/user/delete', [UserController::class, 'destroy'])->name('user.delete');
+
+    Route::get('/categorias', [CategoriaController::class, 'index']);
+    Route::get('/categorias/{id}', [CategoriaController::class, 'show']);
+    Route::get('/produtos', [ProdutoController::class, 'index']);
+    Route::get('/produtos/{id}', [ProdutoController::class, 'show']);
 });
 
-// Rotas Protegidas (requerem autenticação)
-Route::middleware('auth:sanctum')->group(function () {
-    // Rotas de CRUD para Categorias
-    Route::apiResource('categorias', CategoriaController::class);
+// Rotas que requerem autenticação e role de admin
+Route::middleware(['auth:sanctum', 'check.admin'])->group(function () {
+    Route::get('/users', [UserController::class, 'getAll'])->name('user.index');
+    Route::put('/users/{id}', [UserController::class, 'updateUser'])->name('user.update.admin');
+    Route::delete('/users/{id}', [UserController::class, 'destroyUser'])->name('user.delete.admin');
 
-    // Rotas de CRUD para Produtos
-    Route::apiResource('produtos', ProdutoController::class);
+    Route::apiResource('categorias', CategoriaController::class)->except(['index', 'show']);
+    Route::apiResource('produtos', ProdutoController::class)->except(['index', 'show']);
+});
 
-    // Rota para obter dados do usuário autenticado
-    Route::get('/user/me', [UserController::class, 'me'])->middleware('auth:sanctum')->name('user.me');});

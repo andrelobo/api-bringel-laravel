@@ -18,12 +18,24 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|in:' . User::ROLE_ADMIN . ',' . User::ROLE_USER,
-        ]);
+        $validated = $request->validate(
+            [
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:users',
+                'password' => 'required|string|min:8|confirmed',
+                'role' => 'required|in:' . User::ROLE_ADMIN . ',' . User::ROLE_USER,
+            ],
+            [
+                'name.required' => 'O nome é obrigatório.',
+                'email.required' => 'O e-mail é obrigatório.',
+                'email.unique' => 'O e-mail já está em uso.',
+                'password.required' => 'A senha é obrigatória.',
+                'password.min' => 'A senha deve ter pelo menos 8 caracteres.',
+                'password.confirmed' => 'A confirmação da senha não corresponde.',
+                'role.required' => 'O papel do usuário é obrigatório.',
+                'role.in' => 'O papel informado é inválido.',
+            ]
+        );
 
         $user = User::create([
             'name' => $validated['name'],
@@ -32,9 +44,10 @@ class AuthController extends Controller
             'role' => $validated['role'],
         ]);
 
-        // ... rest of the register method ...
-        return response()->json(['message' => 'User registered successfully'], 201);
-
+        return response()->json([
+            'message' => 'Usuário registrado com sucesso.',
+            'user' => $user,
+        ], 201);
     }
 
     /**
@@ -46,10 +59,17 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         // Validação dos dados de entrada
-        $credentials = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+        $credentials = $request->validate(
+            [
+                'email' => 'required|email',
+                'password' => 'required',
+            ],
+            [
+                'email.required' => 'O e-mail é obrigatório.',
+                'email.email' => 'Informe um e-mail válido.',
+                'password.required' => 'A senha é obrigatória.',
+            ]
+        );
 
         // Busca o usuário pelo email
         $user = User::where('email', $credentials['email'])->first();
@@ -57,18 +77,17 @@ class AuthController extends Controller
         // Verifica se o usuário existe e se a senha está correta
         if (!$user || !Hash::check($credentials['password'], $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
+                'email' => ['As credenciais fornecidas estão incorretas.'],
             ]);
         }
 
         // Gera um token de autenticação
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        // Retorna a resposta com o token
         return response()->json([
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'user' => $user, // Retorna os dados do usuário (opcional)
+            'user' => $user, // Opcional: Retorna os dados do usuário autenticado
         ], 200);
     }
 
@@ -83,7 +102,6 @@ class AuthController extends Controller
         // Revoga todos os tokens do usuário
         $request->user()->tokens()->delete();
 
-        // Retorna uma mensagem de sucesso
-        return response()->json(['message' => 'Logged out successfully.'], 200);
+        return response()->json(['message' => 'Logout realizado com sucesso.'], 200);
     }
 }

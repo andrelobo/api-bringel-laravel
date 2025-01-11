@@ -4,15 +4,16 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use Notifiable;
+    use HasApiTokens, Notifiable;
 
     /**
      * The attributes that are mass assignable.
      *
-     * @var array
+     * @var array<int, string>
      */
     protected $fillable = [
         'name',
@@ -24,7 +25,7 @@ class User extends Authenticatable
     /**
      * The attributes that should be hidden for arrays.
      *
-     * @var array
+     * @var array<int, string>
      */
     protected $hidden = [
         'password',
@@ -34,18 +35,37 @@ class User extends Authenticatable
     /**
      * The attributes that should be cast to native types.
      *
-     * @var array
+     * @var array<string, string>
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
 
-    const ROLE_ADMIN = 'admin';
-    const ROLE_USER = 'user';
+    /**
+     * Role constants for easy reference.
+     */
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_USER = 'user';
 
+    /**
+     * Check if the user has a specific role.
+     *
+     * @param string $role
+     * @return bool
+     */
     public function hasRole(string $role): bool
     {
         return $this->role === $role;
     }
-}
 
+    /**
+     * Assign a role to the user.
+     *
+     * @param string $role
+     * @return void
+     */
+    public function assignRole(string $role): void
+    {
+        $this->update(['role' => $role]);
+    }
+}

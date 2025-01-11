@@ -4,19 +4,28 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Categoria;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class CategoriaController extends Controller
 {
+    public function __construct()
+    {
+        // Middleware para proteger rotas administrativas
+        $this->middleware('can:admin')->except(['index', 'show']);
+    }
+
     /**
      * Listar todas as categorias.
      */
     public function index()
     {
         $categorias = Categoria::all();
-        return response()->json($categorias);
+
+        return response()->json([
+            'success' => true,
+            'data' => $categorias,
+        ]);
     }
 
     /**
@@ -24,20 +33,17 @@ class CategoriaController extends Controller
      */
     public function store(Request $request)
     {
-        if (!$request->user()->hasRole(User::ROLE_ADMIN)) {
-            return response()->json(['message' => 'Unauthorized'], Response::HTTP_FORBIDDEN);
-        }
-
-        // Validação dos dados de entrada
-        $request->validate([
+        $validated = $request->validate([
             'nome' => 'required|string|max:100',
         ]);
 
-        // Cria a categoria no banco de dados
-        $categoria = Categoria::create($request->only('nome'));
+        $categoria = Categoria::create($validated);
 
-        // Retorna a categoria criada com status 201 (Created)
-        return response()->json($categoria, Response::HTTP_CREATED);
+        return response()->json([
+            'success' => true,
+            'message' => 'Categoria criada com sucesso',
+            'data' => $categoria,
+        ], Response::HTTP_CREATED);
     }
 
     /**
@@ -45,16 +51,20 @@ class CategoriaController extends Controller
      */
     public function show(string $id)
     {
-        // Busca a categoria pelo ID
         $categoria = Categoria::find($id);
 
-        // Se a categoria não for encontrada, retorna um erro 404
         if (!$categoria) {
-            return response()->json(['message' => 'Categoria não encontrada'], Response::HTTP_NOT_FOUND);
+            return $this->errorResponse(
+                'Categoria não encontrada',
+                ['id' => ['Categoria com o ID fornecido não existe']],
+                Response::HTTP_NOT_FOUND
+            );
         }
 
-        // Retorna a categoria encontrada
-        return response()->json($categoria);
+        return response()->json([
+            'success' => true,
+            'data' => $categoria,
+        ]);
     }
 
     /**
@@ -62,52 +72,61 @@ class CategoriaController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        if (!$request->user()->hasRole(User::ROLE_ADMIN)) {
-            return response()->json(['message' => 'Unauthorized'], Response::HTTP_FORBIDDEN);
-        }
-
-        // Busca a categoria pelo ID
         $categoria = Categoria::find($id);
 
-        // Se a categoria não for encontrada, retorna um erro 404
         if (!$categoria) {
-            return response()->json(['message' => 'Categoria não encontrada'], Response::HTTP_NOT_FOUND);
+            return $this->errorResponse(
+                'Categoria não encontrada',
+                ['id' => ['Categoria com o ID fornecido não existe']],
+                Response::HTTP_NOT_FOUND
+            );
         }
 
-        // Validação dos dados de entrada
-        $request->validate([
+        $validated = $request->validate([
             'nome' => 'required|string|max:100',
         ]);
 
-        // Atualiza a categoria com os dados fornecidos
-        $categoria->update($request->only('nome'));
+        $categoria->update($validated);
 
-        // Retorna a categoria atualizada
-        return response()->json($categoria);
+        return response()->json([
+            'success' => true,
+            'message' => 'Categoria atualizada com sucesso',
+            'data' => $categoria,
+        ]);
     }
 
     /**
      * Excluir uma categoria.
      */
-    public function destroy(Request $request, string $id)
+    public function destroy(string $id)
     {
-        if (!$request->user()->hasRole(User::ROLE_ADMIN)) {
-            return response()->json(['message' => 'Unauthorized'], Response::HTTP_FORBIDDEN);
-        }
-
-        // Busca a categoria pelo ID
         $categoria = Categoria::find($id);
 
-        // Se a categoria não for encontrada, retorna um erro 404
         if (!$categoria) {
-            return response()->json(['message' => 'Categoria não encontrada'], Response::HTTP_NOT_FOUND);
+            return $this->errorResponse(
+                'Categoria não encontrada',
+                ['id' => ['Categoria com o ID fornecido não existe']],
+                Response::HTTP_NOT_FOUND
+            );
         }
 
-        // Exclui a categoria
         $categoria->delete();
 
-        // Retorna uma resposta vazia com status 204 (No Content)
-        return response()->json(null, Response::HTTP_NO_CONTENT);
+        return response()->json([
+            'success' => true,
+            'message' => 'Categoria excluída com sucesso',
+        ], Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * Método auxiliar para padronizar respostas de erro.
+     */
+    private function errorResponse(string $message, array $errors = [], int $status = Response::HTTP_BAD_REQUEST)
+    {
+        return response()->json([
+            'success' => false,
+            'message' => $message,
+            'errors' => $errors,
+        ], $status);
     }
 }
-

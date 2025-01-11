@@ -10,10 +10,12 @@ use App\Http\Controllers\Api\UserController;
 Route::post('/register', [AuthController::class, 'register'])->name('register');
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 
-// Rotas que requerem apenas autenticação
+// Rota para obter informações do usuário autenticado
+Route::get('/user/me', [UserController::class, 'me'])->name('user.me');
+
+// Rotas que requerem autenticação
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-    Route::get('/user/me', [UserController::class, 'me'])->name('user.me');
     Route::put('/user/update', [UserController::class, 'update'])->name('user.update');
     Route::delete('/user/delete', [UserController::class, 'destroy'])->name('user.delete');
 
